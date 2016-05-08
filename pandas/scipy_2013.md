@@ -518,8 +518,10 @@ Index is still on 0,1,2
 	```
 	
 ## GroupBy?
+- ### By default group by is on rows.
+
 - `Group by `: Generate a sequence of indexed numbers for a given length.
-	
+ 
 	```
 	cdystonia_grouped = cdystonia.groupby(cdystonia.patient)
 	for patient, group in cdystonia_grouped:
@@ -533,3 +535,207 @@ Index is still on 0,1,2
 	```
 	cdystonia_grouped.agg(mean).head()
 	```
+- Add suffix to coulumn name for easier readibilty
+
+	```
+	cdystonia_grouped.mean().add_suffix('_mean').head()
+	```
+- ***Median*** of a grouped coulumn can be calculated using `quantile`
+
+	```
+	cdystonia_grouped['twstrs'].quantile(0.5)
+	```	
+- ***Group by 2 keys*** : We can group by multiple keys.
+
+	```
+	cdystonia.groupby(['week','site']).mean().head()
+	```		
+- ***Transform*** : We can transform the group data.
+
+	```
+	normalize = lambda x: (x - x.mean())/x.std()
+
+	cdystonia_grouped.transform(normalize)
+	```		
+- ***Chunks*** : You can divide your data in chunks to be used as dict..
+
+	```
+	chunks = dict(list(cdystonia_grouped))	```		
+	
+- ***Group by coulumn*** : Axis = 1 helps you group by coulumns.
+
+	```
+	dict(list(cdystonia.groupby(cdystonia.dtypes, axis=1)))
+	```		
+- `Sort` and find top 3 by any coulumn 
+
+	```
+	def top(df, column, n=5):
+    return df.sort_index(by=column, ascending=False)[:n]
+    
+	top3segments = segments_merged.groupby('mmsi').apply(top, column='seg_length', n=3)\
+	[['names', 'seg_length']]
+	```		
+	
+## Plotting and Visualization
+
+### Matplotlib
+- Start notebook in `matplotlib` mode.
+
+	```
+	 %matplotlib inline
+	 import matplotlib.pyplot as plt
+	```		
+- ***Matplotlib***: Simple `X,Y` plotting 
+
+
+	```
+	plt.plot(np.random.normal(size=100), np.random.normal(size=100), 'ro')
+	
+	import matplotlib as mpl
+	with mpl.rc_context(rc={'font.family': 'serif', 'font.weight': 'bold', 'font.size': 8}):
+	   	 fig = plt.figure(figsize=(6,3))
+	    ax1 = fig.add_subplot(121)
+	    ax1.set_xlabel('some random numbers')
+	    ax1.set_ylabel('more random numbers')
+	    ax1.set_title("Random scatterplot")
+	    plt.plot(np.random.normal(size=100), np.random.normal(size=100), 'r.')
+	    ax2 = fig.add_subplot(122)
+	    plt.hist(np.random.normal(size=100), bins=15)
+	    ax2.set_xlabel('sample')
+	    ax2.set_ylabel('cumulative sum')
+	    ax2.set_title("Normal distrubution")
+	    plt.tight_layout()
+	    plt.savefig("normalvars.png", dpi=150)	
+	```		
+
+- ***Pandas*** for Series: 
+
+	```
+	normals = pd.Series(np.random.normal(size=100))
+	normals.plot()
+	``` 
+- ***Pandas*** for DataFrame: 
+
+	```
+	normals = pd.DataFrame({'normal': np.random.normal(size=100), 
+                       'gamma': np.random.gamma(1, size=100), 
+                       'poisson': np.random.poisson(size=100)})
+	normals.plot()
+	variables.cumsum().plot()
+	``` 
+- `Subplots` can be used plot subplots.
+
+	```
+	variables.cumsum(0).plot(subplots=True)
+	``` 
+- `Secondary`: You can plot of the plots as secondary `y-axis`
+
+	```
+	variables.cumsum(0).plot(secondary_y='normal')
+	```
+- `Subplots` : for pandas using matplotlib. 
+	- nrows, ncols
+	- figsize
+
+	```
+	fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 4))
+	
+	for i,var in enumerate(['normal','gamma','poisson']):
+   	 variables[var].cumsum(0).plot(ax=axes[i], title=var)
+	axes[0].set_ylabel('cumulative sum')
+
+	``
+
+### `Bar Plots`
+- Simply use kind=`bar`
+- `Horizontal` use kind=`hbar`
+	
+	```
+	titanic.groupby('pclass').survived.sum().plot(kind='bar')
+	titanic.groupby(['sex','pclass']).survived.sum().plot(kind='barh')
+	```
+- `Crosstab` plotting	
+
+	```
+	death_counts = pd.crosstab([titanic.pclass, titanic.sex], titanic.survived.astype(bool))
+
+	death_counts.plot(kind='bar', stacked=True, color=['black','gold'], grid=False)
+	```
+	![MacDown Screenshot] (/Users/kdalwani/Desktop/Screen Shot 2016-05-08 at 2.01.20 PM.png)
+	![MacDown Screenshot](/Users/kdalwani/Desktop/Screen Shot 2016-05-08 at 2.01.13 PM.png)
+
+- `Percentage`: Divided by sum(1)
+
+	```
+	death_counts.div(death_counts.sum(1).astype(float), axis=0).plot(kind='barh', stacked=True, color=['black','gold'])
+	```		
+	
+### `Histograms`:
+	
+- `Bins`: Default 10
+- `Grids`
+
+	```
+	titanic.fare.hist(grid=False)
+	titanic.fare.hist(bins=20)
+
+	```
+
+- Histogram using 
+	- `KDE`: Kernel density estimation
+	- `Doanne bins`: Bins using Koanne
+	
+	```
+	sturges = lambda n: int(np.log2(n) + 1)
+	square_root = lambda n: int(np.sqrt(n))
+	from scipy.stats import kurtosis
+	doanes = lambda data: int(1 + np.log(len(data)) + np.log(1 + kurtosis(data) * (len(data) / 6.) ** 0.5))
+
+	n = len(titanic)
+	sturges(n), square_root(n), doanes(titanic.fare.dropna())
+	
+	titanic.fare.hist(bins=doanes(titanic.fare.dropna()), normed=True, color='lightseagreen'))
+	titanic.fare.dropna().plot(kind='kde', xlim=(0,600), style='r--'))
+	```
+	![KDE] (/Users/kdalwani/Desktop/Screen Shot 2016-05-08 at 2.18.43 PM.png)
+	
+
+## Boxplots
+
+
+- Draw a boxplot.
+	
+	```
+	titanic.boxplot(column='fare', by='pclass', grid=False)
+	```
+- Or, plot them together.
+	- `Aplha` is for `transparency`
+	
+	```
+	bp = titanic.boxplot(column='age', by='pclass', grid=False)
+	for i in [1,2,3]:
+	   	 y = titanic.age[titanic.pclass==i].dropna()
+	   	 # Add some random "jitter" to the x-axis
+	   	 x = np.random.normal(i, 0.04, size=len(y))
+	   	 plt.plot(x, y, 'r.', alpha=0.2)
+	```	  	
+	
+## Scatterplots
+- Used to find out whethere there is a correlation between dependent and independent variable.
+
+- Simple scatter plot using `matplotlib`
+	-  assigning variables to either the size of the symbols or their colors.
+	- Change the size using `s`
+	- Change color using `c`
+	
+	```
+		plt.scatter(baseball.ab, baseball.h)
+		plt.scatter(baseball.ab, baseball.h, s=baseball.hr*10, alpha=0.5)
+		plt.scatter(baseball.ab, baseball.h, c=baseball.hr, s=40, cmap='hot')
+
+	```	
+### Scatter plot of cross variables
+	```
+	 pd.scatter_matrix(baseball.loc[:,'r':'sb'], figsize=(12,8), diagonal='kde')
+	```	
