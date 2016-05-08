@@ -662,9 +662,8 @@ Index is still on 0,1,2
 
 	death_counts.plot(kind='bar', stacked=True, color=['black','gold'], grid=False)
 	```
-	![MacDown Screenshot] (/Users/kdalwani/Desktop/Screen Shot 2016-05-08 at 2.01.20 PM.png)
-	![MacDown Screenshot](/Users/kdalwani/Desktop/Screen Shot 2016-05-08 at 2.01.13 PM.png)
-
+	![hist1] (../pics/hist_1.jpg)
+	![hist1] (../pics/hist_2.jpg)
 - `Percentage`: Divided by sum(1)
 
 	```
@@ -698,7 +697,7 @@ Index is still on 0,1,2
 	titanic.fare.hist(bins=doanes(titanic.fare.dropna()), normed=True, color='lightseagreen'))
 	titanic.fare.dropna().plot(kind='kde', xlim=(0,600), style='r--'))
 	```
-	![KDE] (/Users/kdalwani/Desktop/Screen Shot 2016-05-08 at 2.18.43 PM.png)
+	![KDE] (../pics/kde.jpg)
 	
 
 ## Boxplots
